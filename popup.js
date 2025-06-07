@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const helpLink = document.getElementById('helpLink');
     const helpModal = document.getElementById('helpModal');
     const closeModal = document.getElementById('closeModal');
+    const groundingToggle = document.getElementById('groundingToggle');
+    const groundingStatusText = document.getElementById('groundingStatusText');
     
     // Default system prompt
     const defaultPrompt = `You are a helpful AI assistant. Please provide accurate, helpful, and well-structured responses.
@@ -26,11 +28,13 @@ Key guidelines:
     // Load settings from storage
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt']);
+            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference']);
             
             enableToggle.checked = result.enabled !== false; // Default to true
             systemPromptTextarea.value = result.systemPrompt || defaultPrompt;
+            groundingToggle.checked = result.groundingPreference !== false; // Default to true
             updateCharCount();
+            await updateGroundingStatusDisplay(); // Update status after loading settings
             
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -43,7 +47,8 @@ Key guidelines:
         try {
             const settings = {
                 enabled: enableToggle.checked,
-                systemPrompt: systemPromptTextarea.value.trim()
+                systemPrompt: systemPromptTextarea.value.trim(),
+                groundingPreference: groundingToggle.checked
             };
             
             await chrome.storage.sync.set(settings);
@@ -55,7 +60,16 @@ Key guidelines:
                     await chrome.tabs.sendMessage(tab.id, {
                         action: 'updateSettings',
                         enabled: settings.enabled,
-                        systemPrompt: settings.systemPrompt
+                        systemPrompt: settings.systemPrompt,
+                        // Also send grounding preference if it changed
+                        // This message is generic 'updateSettings', so content script might need to handle individual parts
+                        // Or we send a specific message for grounding
+                    });
+
+                    // Send specific message for grounding update
+                    await chrome.tabs.sendMessage(tab.id, {
+                        action: 'updateGroundingSetting',
+                        preference: settings.groundingPreference
                     });
                 }
             } catch (error) {
@@ -64,10 +78,42 @@ Key guidelines:
             }
             
             showStatus('Settings saved successfully!', 'success');
+            await updateGroundingStatusDisplay(); // Refresh status after saving
             
         } catch (error) {
             console.error('Error saving settings:', error);
             showStatus('Error saving settings', 'error');
+        }
+    }
+
+    // Update Grounding Status Display
+    async function updateGroundingStatusDisplay() {
+        if (!groundingStatusText) return; // Element might not be ready
+
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.url && tab.url.includes('aistudio.google.com')) {
+                const response = await chrome.tabs.sendMessage(tab.id, { action: 'getGroundingStatus' });
+                if (response && response.success) {
+                    if (response.found) {
+                        groundingStatusText.textContent = response.isEnabled ? 'Enabled on page' : 'Disabled on page';
+                        // Optionally, sync toggle if page state is different from stored pref
+                        // This could happen if something else changes it on the page
+                        // For now, we let the user's stored preference be the driver via saveSettings
+                        // groundingToggle.checked = response.isEnabled;
+                    } else {
+                        groundingStatusText.textContent = 'Button not found';
+                    }
+                } else {
+                    groundingStatusText.textContent = 'Error getting status';
+                    console.warn('Error or no response from getGroundingStatus:', response);
+                }
+            } else {
+                groundingStatusText.textContent = 'N/A (not AI Studio)';
+            }
+        } catch (error) {
+            console.error('Error updating grounding status display:', error);
+            groundingStatusText.textContent = 'Error';
         }
     }
     
@@ -148,10 +194,12 @@ Key guidelines:
                 domainIndicator.className = 'status-indicator active';
                 domainText.textContent = 'Active on AI Studio';
                 insertBtn.disabled = false;
+                await updateGroundingStatusDisplay(); // Update grounding status when on AI Studio
             } else {
                 domainIndicator.className = 'status-indicator inactive';
                 domainText.textContent = 'Not on AI Studio';
                 insertBtn.disabled = true;
+                if (groundingStatusText) groundingStatusText.textContent = 'N/A'; // Reset grounding status text
             }
         } catch (error) {
             domainIndicator.className = 'status-indicator inactive';
@@ -177,6 +225,7 @@ Key guidelines:
     
     // Event listeners
     enableToggle.addEventListener('change', saveSettings);
+    groundingToggle.addEventListener('change', saveSettings);
     systemPromptTextarea.addEventListener('input', updateCharCount);
     saveBtn.addEventListener('click', saveSettings);
     insertBtn.addEventListener('click', insertPromptNow);
@@ -223,8 +272,8 @@ Key guidelines:
     });
     
     // Initialize
-    await loadSettings();
-    await checkDomain();
+    await loadSettings(); // This will call updateGroundingStatusDisplay
+    await checkDomain();    // This will also call updateGroundingStatusDisplay if on AI Studio
     
     // Update domain status when tab changes
     chrome.tabs.onActivated.addListener(checkDomain);
