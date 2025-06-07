@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const insertBtn = document.getElementById('insertBtn');
     const resetBtn = document.getElementById('resetBtn');
     const statusMessage = document.getElementById('statusMessage');
-    const charCount = document.getElementById('charCount');
+    const wordCount = document.getElementById('wordCount');
     const domainIndicator = document.getElementById('domainIndicator');
     const domainText = document.getElementById('domainText');
     const helpLink = document.getElementById('helpLink');
@@ -36,7 +36,7 @@ Key guidelines:
             systemPromptTextarea.value = result.systemPrompt || defaultPrompt;
             groundingToggle.checked = result.groundingPreference !== false; // Default to true
             urlContextToggle.checked = result.urlContextPreference !== false; // Default to true
-            updateCharCount();
+            updateWordCount();
             await updateGroundingStatusDisplay(); 
             await updateUrlContextStatusDisplay(); 
             
@@ -193,7 +193,7 @@ Key guidelines:
     // Reset to default prompt
     function resetToDefault() {
         systemPromptTextarea.value = defaultPrompt;
-        updateCharCount();
+        updateWordCount();
         showStatus('Reset to default prompt', 'info');
     }
     
@@ -209,18 +209,23 @@ Key guidelines:
         }, 3000);
     }
     
-    // Update character count
-    function updateCharCount() {
-        const count = systemPromptTextarea.value.length;
-        charCount.textContent = count.toLocaleString();
+    // Update word count
+    function updateWordCount() {
+        const text = systemPromptTextarea.value.trim();
+        let count = 0;
+        if (text) {
+            const words = text.match(/\S+/g); // Match non-whitespace sequences
+            count = words ? words.length : 0;
+        }
+        wordCount.textContent = count.toLocaleString();
         
-        // Color coding for length
-        if (count > 2000) {
-            charCount.style.color = '#dc3545';
-        } else if (count > 1000) {
-            charCount.style.color = '#ffc107';
+        // Color coding for word count
+        if (count > 400) { // e.g., > 400 words is too long
+            wordCount.style.color = '#dc3545'; // Red
+        } else if (count > 200) { // e.g., > 200 words is long
+            wordCount.style.color = '#ffc107'; // Yellow
         } else {
-            charCount.style.color = '#666';
+            wordCount.style.color = '#666'; // Default
         }
     }
     
@@ -268,7 +273,7 @@ Key guidelines:
     enableToggle.addEventListener('change', saveSettings);
     groundingToggle.addEventListener('change', saveSettings);
     urlContextToggle.addEventListener('change', saveSettings);
-    systemPromptTextarea.addEventListener('input', updateCharCount);
+    systemPromptTextarea.addEventListener('input', updateWordCount);
     saveBtn.addEventListener('click', saveSettings);
     insertBtn.addEventListener('click', insertPromptNow);
     resetBtn.addEventListener('click', resetToDefault);
