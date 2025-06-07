@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator for AI Studio Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .icon-preview {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        .icon {
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+        }
+        canvas {
+            display: block;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Studio Extension Icon Generator</h1>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Generate Icons" to create placeholder icons</li>
+                <li>Right-click each icon and "Save image as..."</li>
+                <li>Save them in the <code>icons/</code> folder with the correct names</li>
+                <li>Or replace with your own custom icons</li>
+            </ol>
+        </div>
+        
+        <button onclick="generateIcons()">Generate Icons</button>
+        <button onclick="downloadAll()">Download All Icons</button>
+        
+        <div id="iconContainer"></div>
+    </div>
+
+    <script>
+        function generateIcons() {
+            const sizes = [16, 32, 48, 128];
+            const container = document.getElementById('iconContainer');
+            container.innerHTML = '';
+            
+            sizes.forEach(size => {
+                const preview = document.createElement('div');
+                preview.className = 'icon-preview';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                canvas.className = 'icon';
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                
+                // Fill background
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+                
+                // Add border radius effect
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.15);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                
+                // Add "AI" text
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${size * 0.4}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('AI', size / 2, size / 2);
+                
+                // Add small gear icon for larger sizes
+                if (size >= 32) {
+                    ctx.save();
+                    ctx.translate(size * 0.75, size * 0.25);
+                    ctx.scale(size / 128, size / 128);
+                    
+                    // Draw gear
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i * Math.PI) / 4;
+                        const x = Math.cos(angle) * 8;
+                        const y = Math.sin(angle) * 8;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Inner circle
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 4, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#667eea';
+                    ctx.fill();
+                    
+                    ctx.restore();
+                }
+                
+                const label = document.createElement('div');
+                label.textContent = `${size}x${size} (icon${size}.png)`;
+                label.style.fontSize = '12px';
+                label.style.color = '#666';
+                
+                preview.appendChild(canvas);
+                preview.appendChild(label);
+                container.appendChild(preview);
+            });
+        }
+        
+        function downloadAll() {
+            const canvases = document.querySelectorAll('canvas');
+            const sizes = [16, 32, 48, 128];
+            
+            canvases.forEach((canvas, index) => {
+                const link = document.createElement('a');
+                link.download = `icon${sizes[index]}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+        
+        // Polyfill for roundRect if not available
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+        
+        // Generate icons on page load
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>
