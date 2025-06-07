@@ -8,6 +8,7 @@
     let urlContextPreference = true; // Default to true (enabled)
     let thinkingBudgetEnabled = false; // Default to false (disabled)
     let hasInserted = false;
+    let thinkingBudgetMaxNotificationShown = false;
     
     const URL_CONTEXT_BUTTON_SELECTOR = 'button[aria-label="Browse the url context"]';
 
@@ -419,11 +420,18 @@ Key guidelines:
 
                     const tempSuccess = await setTemperatureToMax(slider);
                     if (tempSuccess) {
-                        const message = isUsingFallback
-                            ? 'Thinking budget set to max with temperature (fallback slider used)'
-                            : 'Thinking budget set to max with maximum temperature';
-                        showNotification(message);
+                        if (isUsingFallback) {
+                            // Fallback slider message, show every time
+                            showNotification('Thinking budget set to max with temperature (fallback slider used)');
+                        } else {
+                            // Standard "max temperature" message, show only once
+                            if (!thinkingBudgetMaxNotificationShown) {
+                                showNotification('Thinking budget set to max with maximum temperature');
+                                thinkingBudgetMaxNotificationShown = true;
+                            }
+                        }
                     } else {
+                        // Failure message, show every time
                         showNotification('Thinking budget set to manual (temperature adjustment failed)');
                     }
                 } else {
