@@ -6,6 +6,7 @@
     let systemPrompt = '';
     let groundingPreference = true; // Default to true (enabled)
     let urlContextPreference = true; // Default to true (enabled)
+    let thinkingBudgetEnabled = false; // Default to false (disabled)
     let hasInserted = false;
     
     const URL_CONTEXT_BUTTON_SELECTOR = 'button[aria-label="Browse the url context"]';
@@ -13,17 +14,19 @@
     // Load settings from storage
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference', 'urlContextPreference']);
+            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference', 'urlContextPreference', 'thinkingBudgetEnabled']);
             isEnabled = result.enabled !== false; // Default to true
             systemPrompt = result.systemPrompt || getDefaultPrompt();
             groundingPreference = result.groundingPreference !== false; // Default to true
             urlContextPreference = result.urlContextPreference !== false; // Default to true
+            thinkingBudgetEnabled = result.thinkingBudgetEnabled === true; // Default to false
         } catch (error) {
             console.error('Error loading settings:', error);
             isEnabled = true;
             systemPrompt = getDefaultPrompt();
             groundingPreference = true;
             urlContextPreference = true;
+            thinkingBudgetEnabled = false;
         }
     }
     
@@ -294,6 +297,172 @@ Key guidelines:
     }
     // --- End URL Context Button Logic ---
 
+    // --- Thinking Budget Logic ---
+    const THINKING_BUDGET_BUTTON_SELECTOR = 'button[aria-label="Toggle thinking budget between auto and manual"]';
+    // Note: AI Studio may have multiple temperature sliders. We target the second one (index 1)
+    // as it's typically associated with manual thinking budget controls, not general model temperature.
+    const TEMPERATURE_SLIDER_SELECTOR = 'input[aria-label="Temperature"][type="range"]';
+
+    function findThinkingBudgetButton() {
+        return document.querySelector(THINKING_BUDGET_BUTTON_SELECTOR);
+    }
+
+    function findTemperatureSlider() {
+        // Get all temperature sliders on the page
+        const sliders = document.querySelectorAll(TEMPERATURE_SLIDER_SELECTOR);
+
+        if (sliders.length === 0) {
+            console.log('AI Studio Automation: No temperature sliders found on page');
+            return null;
+        } else if (sliders.length === 1) {
+            console.warn('AI Studio Automation: Only one temperature slider found, expected at least two. Using the first one as fallback.');
+            return sliders[0];
+        } else {
+            // Target the second temperature slider (index 1) as it's typically associated with manual thinking budget
+            console.log(`AI Studio Automation: Found ${sliders.length} temperature sliders, targeting the second one (index 1)`);
+            return sliders[1];
+        }
+    }
+
+    function isThinkingBudgetManual(button) {
+        return button.getAttribute('aria-checked') === 'true';
+    }
+
+    async function setThinkingBudgetToManual(button) {
+        try {
+            if (isThinkingBudgetManual(button)) {
+                console.log('AI Studio Automation: Thinking budget already set to manual');
+                return true;
+            }
+
+            console.log('AI Studio Automation: Setting thinking budget to manual');
+            button.click();
+
+            // Wait a moment for the UI to update
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Verify the change
+            if (isThinkingBudgetManual(button)) {
+                console.log('AI Studio Automation: Successfully set thinking budget to manual');
+                return true;
+            } else {
+                console.error('AI Studio Automation: Failed to set thinking budget to manual');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error setting thinking budget to manual:', error);
+            return false;
+        }
+    }
+
+    async function setTemperatureToMax(slider) {
+        try {
+            const maxValue = slider.getAttribute('max') || '2';
+            const currentValue = slider.value;
+
+            // Get all sliders to determine which one we're targeting
+            const allSliders = document.querySelectorAll(TEMPERATURE_SLIDER_SELECTOR);
+            const sliderIndex = Array.from(allSliders).indexOf(slider);
+            const sliderDescription = sliderIndex === 0 ? 'first (fallback)' : `${sliderIndex + 1}`;
+
+            if (currentValue === maxValue) {
+                console.log(`AI Studio Automation: Temperature already at maximum on ${sliderDescription} slider`);
+                return true;
+            }
+
+            console.log(`AI Studio Automation: Setting temperature to max (${maxValue}) on ${sliderDescription} slider`);
+
+            // Set the value
+            slider.value = maxValue;
+
+            // Update aria-valuetext if it exists
+            slider.setAttribute('aria-valuetext', maxValue);
+
+            // Dispatch events to ensure the application recognizes the change
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+            slider.dispatchEvent(new Event('change', { bubbles: true }));
+
+            console.log(`AI Studio Automation: Successfully set temperature to maximum on ${sliderDescription} slider`);
+            return true;
+        } catch (error) {
+            console.error('Error setting temperature to max:', error);
+            return false;
+        }
+    }
+
+    async function applyThinkingBudgetSettings() {
+        if (!isEnabled || !thinkingBudgetEnabled) {
+            return;
+        }
+
+        const button = findThinkingBudgetButton();
+        if (!button) {
+            console.log('AI Studio Automation: Thinking budget button not found');
+            return;
+        }
+
+        try {
+            // Set thinking budget to manual
+            const budgetSuccess = await setThinkingBudgetToManual(button);
+
+            if (budgetSuccess) {
+                // Wait a bit more for the temperature slider to appear
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Try to set temperature to max
+                const slider = findTemperatureSlider();
+                if (slider) {
+                    const allSliders = document.querySelectorAll(TEMPERATURE_SLIDER_SELECTOR);
+                    const sliderIndex = Array.from(allSliders).indexOf(slider);
+                    const isUsingFallback = allSliders.length === 1;
+
+                    console.log(`AI Studio Automation: Attempting to set temperature on slider ${sliderIndex + 1} of ${allSliders.length}${isUsingFallback ? ' (using fallback)' : ''}`);
+
+                    const tempSuccess = await setTemperatureToMax(slider);
+                    if (tempSuccess) {
+                        const message = isUsingFallback
+                            ? 'Thinking budget set to max with temperature (fallback slider used)'
+                            : 'Thinking budget set to max with maximum temperature';
+                        showNotification(message);
+                    } else {
+                        showNotification('Thinking budget set to manual (temperature adjustment failed)');
+                    }
+                } else {
+                    console.log('AI Studio Automation: No temperature slider found, but thinking budget was set');
+                    showNotification('Thinking budget set to manual (no temperature slider found)');
+                }
+            }
+        } catch (error) {
+            console.error('Error applying thinking budget settings:', error);
+            showNotification('Error setting thinking budget', 'error');
+        }
+    }
+
+    // Retry mechanism for thinking budget
+    async function retryThinkingBudgetSettings(maxRetries = 15, retryInterval = 2000) {
+        if (!isEnabled || !thinkingBudgetEnabled) {
+            return;
+        }
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const button = findThinkingBudgetButton();
+            if (button) {
+                console.log(`AI Studio Automation: Found thinking budget button on attempt ${attempt}`);
+                await applyThinkingBudgetSettings();
+                return;
+            }
+
+            if (attempt < maxRetries) {
+                console.log(`AI Studio Automation: Thinking budget button not found, retrying in ${retryInterval/1000}s (attempt ${attempt}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, retryInterval));
+            }
+        }
+
+        console.log('AI Studio Automation: Thinking budget button not found after all retries');
+    }
+
+    // --- End Thinking Budget Logic ---
+
     // Combined function to apply all automations
     async function applyAllAutomation() {
         await loadSettings(); // Ensure settings are fresh
@@ -304,6 +473,11 @@ Key guidelines:
         await checkAndInsertSystemPrompt();
         await applyGroundingPreference();
         await applyUrlContextPreference();
+
+        // Apply thinking budget settings with delay and retry
+        setTimeout(() => {
+            retryThinkingBudgetSettings();
+        }, 500);
     }
     
     // Observer to watch for DOM changes
@@ -395,6 +569,31 @@ Key guidelines:
             if (button) {
                 const status = getUrlContextButtonState(button);
                 sendResponse({ success: true, found: true, isEnabled: status });
+            } else {
+                sendResponse({ success: false, found: false });
+            }
+            return true; // Keep channel open
+        } else if (request.action === 'updateThinkingBudgetSetting') {
+            thinkingBudgetEnabled = request.enabled;
+            console.log('AI Studio Automation: Thinking budget preference updated to:', thinkingBudgetEnabled);
+            chrome.storage.sync.set({ thinkingBudgetEnabled: thinkingBudgetEnabled }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('AI Studio Automation: Error saving thinking budget preference:', chrome.runtime.lastError);
+                }
+            });
+            if (thinkingBudgetEnabled) {
+                // Apply immediately when enabled
+                setTimeout(() => {
+                    retryThinkingBudgetSettings();
+                }, 500);
+            }
+            sendResponse({ success: true });
+            return true; // Async response
+        } else if (request.action === 'getThinkingBudgetStatus') {
+            const button = findThinkingBudgetButton();
+            if (button) {
+                const isManual = isThinkingBudgetManual(button);
+                sendResponse({ success: true, found: true, isManual: isManual });
             } else {
                 sendResponse({ success: false, found: false });
             }

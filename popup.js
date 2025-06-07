@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const groundingStatusText = document.getElementById('groundingStatusText');
     const urlContextToggle = document.getElementById('urlContextToggle');
     const urlContextStatusText = document.getElementById('urlContextStatusText');
+    const thinkingBudgetToggle = document.getElementById('thinkingBudgetToggle');
+    const thinkingBudgetStatusText = document.getElementById('thinkingBudgetStatusText');
     
     // Default system prompt
     const defaultPrompt = `You are a helpful AI assistant. Please provide accurate, helpful, and well-structured responses.
@@ -30,16 +32,18 @@ Key guidelines:
     // Load settings from storage
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference', 'urlContextPreference']);
-            
+            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference', 'urlContextPreference', 'thinkingBudgetEnabled']);
+
             enableToggle.checked = result.enabled !== false; // Default to true
             systemPromptTextarea.value = result.systemPrompt || defaultPrompt;
             groundingToggle.checked = result.groundingPreference !== false; // Default to true
             urlContextToggle.checked = result.urlContextPreference !== false; // Default to true
+            thinkingBudgetToggle.checked = result.thinkingBudgetEnabled === true; // Default to false
             updateWordCount();
-            await updateGroundingStatusDisplay(); 
-            await updateUrlContextStatusDisplay(); 
-            
+            await updateGroundingStatusDisplay();
+            await updateUrlContextStatusDisplay();
+            await updateThinkingBudgetStatusDisplay();
+
         } catch (error) {
             console.error('Error loading settings:', error);
             showStatus('Error loading settings', 'error');
@@ -53,9 +57,10 @@ Key guidelines:
                 enabled: enableToggle.checked,
                 systemPrompt: systemPromptTextarea.value.trim(),
                 groundingPreference: groundingToggle.checked,
-                urlContextPreference: urlContextToggle.checked
+                urlContextPreference: urlContextToggle.checked,
+                thinkingBudgetEnabled: thinkingBudgetToggle.checked
             };
-            
+
             await chrome.storage.sync.set(settings);
             
             // Notify content script of changes
@@ -82,6 +87,12 @@ Key guidelines:
                         action: 'updateUrlContextSetting',
                         preference: settings.urlContextPreference
                     });
+
+                    // Send specific message for thinking budget update
+                    await chrome.tabs.sendMessage(tab.id, {
+                        action: 'updateThinkingBudgetSetting',
+                        enabled: settings.thinkingBudgetEnabled
+                    });
                 }
             } catch (error) {
                 // Content script might not be loaded, that's okay
@@ -89,8 +100,9 @@ Key guidelines:
             }
             
             showStatus('Settings saved successfully!', 'success');
-            await updateGroundingStatusDisplay(); 
-            await updateUrlContextStatusDisplay(); 
+            await updateGroundingStatusDisplay();
+            await updateUrlContextStatusDisplay();
+            await updateThinkingBudgetStatusDisplay();
             
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -131,7 +143,7 @@ Key guidelines:
 
     // Update URL Context Status Display
     async function updateUrlContextStatusDisplay() {
-        if (!urlContextStatusText) return; 
+        if (!urlContextStatusText) return;
 
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -153,6 +165,33 @@ Key guidelines:
         } catch (error) {
             console.error('Error updating URL context status display:', error);
             urlContextStatusText.textContent = 'Error';
+        }
+    }
+
+    // Update Thinking Budget Status Display
+    async function updateThinkingBudgetStatusDisplay() {
+        if (!thinkingBudgetStatusText) return;
+
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.url && tab.url.includes('aistudio.google.com')) {
+                const response = await chrome.tabs.sendMessage(tab.id, { action: 'getThinkingBudgetStatus' });
+                if (response && response.success) {
+                    if (response.found) {
+                        thinkingBudgetStatusText.textContent = response.isManual ? 'Manual mode on page' : 'Auto mode on page';
+                    } else {
+                        thinkingBudgetStatusText.textContent = 'Button not found';
+                    }
+                } else {
+                    thinkingBudgetStatusText.textContent = 'Error getting status';
+                    console.warn('Error or no response from getThinkingBudgetStatus:', response);
+                }
+            } else {
+                thinkingBudgetStatusText.textContent = 'N/A (not AI Studio)';
+            }
+        } catch (error) {
+            console.error('Error updating thinking budget status display:', error);
+            thinkingBudgetStatusText.textContent = 'Error';
         }
     }
     
@@ -238,14 +277,16 @@ Key guidelines:
                 domainIndicator.className = 'status-indicator active';
                 domainText.textContent = 'Active on AI Studio';
                 insertBtn.disabled = false;
-                await updateGroundingStatusDisplay(); 
-                await updateUrlContextStatusDisplay(); 
+                await updateGroundingStatusDisplay();
+                await updateUrlContextStatusDisplay();
+                await updateThinkingBudgetStatusDisplay();
             } else {
                 domainIndicator.className = 'status-indicator inactive';
                 domainText.textContent = 'Not on AI Studio';
                 insertBtn.disabled = true;
-                if (groundingStatusText) groundingStatusText.textContent = 'N/A'; 
-                if (urlContextStatusText) urlContextStatusText.textContent = 'N/A'; 
+                if (groundingStatusText) groundingStatusText.textContent = 'N/A';
+                if (urlContextStatusText) urlContextStatusText.textContent = 'N/A';
+                if (thinkingBudgetStatusText) thinkingBudgetStatusText.textContent = 'N/A';
             }
         } catch (error) {
             domainIndicator.className = 'status-indicator inactive';
@@ -273,6 +314,7 @@ Key guidelines:
     enableToggle.addEventListener('change', saveSettings);
     groundingToggle.addEventListener('change', saveSettings);
     urlContextToggle.addEventListener('change', saveSettings);
+    thinkingBudgetToggle.addEventListener('change', saveSettings);
     systemPromptTextarea.addEventListener('input', updateWordCount);
     saveBtn.addEventListener('click', saveSettings);
     insertBtn.addEventListener('click', insertPromptNow);

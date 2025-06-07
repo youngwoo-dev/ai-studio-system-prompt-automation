@@ -6,6 +6,9 @@ chrome.runtime.onInstalled.addListener((details) => {
         // Set default settings
         const defaultSettings = {
             enabled: true,
+            groundingPreference: true,
+            urlContextPreference: true,
+            thinkingBudgetEnabled: false,
             systemPrompt: `You are a helpful AI assistant. Please provide accurate, helpful, and well-structured responses.
 
 Key guidelines:
@@ -86,6 +89,28 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
                 }).catch(() => {
                     // Content script might not be loaded, ignore error
                 });
+
+                // Send specific updates for individual features
+                if (changes.groundingPreference) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: 'updateGroundingSetting',
+                        preference: changes.groundingPreference.newValue
+                    }).catch(() => {});
+                }
+
+                if (changes.urlContextPreference) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: 'updateUrlContextSetting',
+                        preference: changes.urlContextPreference.newValue
+                    }).catch(() => {});
+                }
+
+                if (changes.thinkingBudgetEnabled) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: 'updateThinkingBudgetSetting',
+                        enabled: changes.thinkingBudgetEnabled.newValue
+                    }).catch(() => {});
+                }
             });
         });
     }

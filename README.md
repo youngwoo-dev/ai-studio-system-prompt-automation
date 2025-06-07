@@ -12,6 +12,9 @@ A Chrome extension that automatically inserts predefined system prompts into Goo
 - **Manual insertion**: Force insert prompts with the "Insert Now" button
 - **Real-time feedback**: Visual notifications when prompts are inserted
 - **Auto-save**: Settings are automatically saved as you type
+- **Google Search Grounding**: Automatically control search grounding settings
+- **URL Context Control**: Manage URL context browsing preferences
+- **Thinking Budget Automation**: Set thinking budget to manual mode with maximum temperature (targets second temperature slider)
 
 ## Installation
 
@@ -78,12 +81,19 @@ A Chrome extension that automatically inserts predefined system prompts into Goo
 5. **Reset to default**
    - Click "Reset to Default" to restore the original system prompt
 
+6. **Control AI Studio Settings**
+   - **Google Search Grounding**: Toggle to enable/disable search grounding
+   - **URL Context**: Control URL context browsing feature
+   - **Thinking Budget**: Automatically set thinking budget to manual mode with maximum temperature (uses second temperature slider when available)
+
 ### Advanced Features
 
 - **Domain indicator**: The popup shows whether you're currently on AI Studio
+- **Status indicators**: Real-time status for each automation feature
 - **Help documentation**: Click "Help" in the popup for detailed instructions
 - **Keyboard shortcuts**: Use Ctrl/Cmd+S to quickly save settings
 - **Error handling**: Clear error messages if something goes wrong
+- **Retry mechanisms**: Automatic retry for features that may load dynamically
 
 ## Default System Prompt
 
@@ -143,6 +153,12 @@ You can customize this to match your specific needs.
 1. **Storage permissions**: Ensure the extension has storage permissions
 2. **Sync issues**: Try disabling and re-enabling Chrome sync
 3. **Extension reload**: Try disabling and re-enabling the extension
+
+### Feature-specific issues
+
+1. **Thinking budget not working**: Feature may take up to 30 seconds to detect the button
+2. **Grounding/URL context not applying**: Refresh the page and wait for full load
+3. **Status showing "Button not found"**: The feature may not be available on the current page type
 
 ## Development
 

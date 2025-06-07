@@ -41,8 +41,25 @@
                     Status: <span id="urlContextStatusText">Unknown</span>
                 </div>
             </div>
-            
-            
+
+            <!-- Thinking Budget Toggle -->
+            <div class="setting-group">
+                <div class="toggle-container">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="thinkingBudgetToggle">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">Set Thinking Budget to Max</span>
+                    </label>
+                </div>
+                <div class="setting-status">
+                    Status: <span id="thinkingBudgetStatusText">Unknown</span>
+                </div>
+                <div class="setting-description">
+                    Automatically sets thinking budget to manual mode with maximum temperature
+                </div>
+            </div>
+
+
             <!-- Enable/Disable Toggle -->
             <div class="setting-group">
                 <div class="toggle-container">
@@ -108,15 +125,24 @@
                     <li>Open a prompt or create a new one</li>
                     <li>The extension will automatically detect the "System instructions" textarea</li>
                     <li>If the textarea is empty, your system prompt will be inserted automatically</li>
-                    <li>Use the toggle to enable/disable auto-insertion</li>
+                    <li>Use the toggles to enable/disable various automation features</li>
                     <li>Click "Insert Now" to manually insert the prompt</li>
                 </ol>
-                
+
+                <h4>Features:</h4>
+                <ul>
+                    <li><strong>System Prompt:</strong> Auto-insert custom system instructions</li>
+                    <li><strong>Google Search Grounding:</strong> Control search grounding setting</li>
+                    <li><strong>URL Context:</strong> Control URL context browsing setting</li>
+                    <li><strong>Thinking Budget:</strong> Set thinking budget to manual mode with max temperature</li>
+                </ul>
+
                 <h4>Tips:</h4>
                 <ul>
                     <li>The extension only works on aistudio.google.com</li>
                     <li>Prompts are only inserted into empty textareas</li>
                     <li>Your settings are automatically saved</li>
+                    <li>Status indicators show current page state for each feature</li>
                 </ul>
             </div>
         </div>
