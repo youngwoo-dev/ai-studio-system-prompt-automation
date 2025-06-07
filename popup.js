@@ -166,7 +166,13 @@ Key guidelines:
     }
     
     function hideHelpModal() {
-        helpModal.classList.add('hidden');
+        console.log('hideHelpModal function called.');
+        if (helpModal) {
+            helpModal.classList.add('hidden');
+            console.log('helpModal classes after attempting to hide:', helpModal.className);
+        } else {
+            console.error('Error: helpModal element not found in hideHelpModal!');
+        }
     }
     
     // Event listeners
@@ -179,7 +185,14 @@ Key guidelines:
         e.preventDefault();
         showHelpModal();
     });
-    closeModal.addEventListener('click', hideHelpModal);
+    if (closeModal) {
+        closeModal.addEventListener('click', function() {
+            console.log('Close button clicked!');
+            hideHelpModal();
+        });
+    } else {
+        console.error('Error: closeModal element not found!');
+    }
     
     // Close modal when clicking outside
     helpModal.addEventListener('click', (e) => {
