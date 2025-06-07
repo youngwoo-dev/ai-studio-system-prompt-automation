@@ -5,20 +5,25 @@
     let isEnabled = true;
     let systemPrompt = '';
     let groundingPreference = true; // Default to true (enabled)
+    let urlContextPreference = true; // Default to true (enabled)
     let hasInserted = false;
     
+    const URL_CONTEXT_BUTTON_SELECTOR = 'button[aria-label="Browse the url context"]';
+
     // Load settings from storage
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference']);
+            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference', 'urlContextPreference']);
             isEnabled = result.enabled !== false; // Default to true
             systemPrompt = result.systemPrompt || getDefaultPrompt();
             groundingPreference = result.groundingPreference !== false; // Default to true
+            urlContextPreference = result.urlContextPreference !== false; // Default to true
         } catch (error) {
             console.error('Error loading settings:', error);
             isEnabled = true;
             systemPrompt = getDefaultPrompt();
             groundingPreference = true;
+            urlContextPreference = true;
         }
     }
     
@@ -227,6 +232,68 @@ Key guidelines:
 
     // --- End Grounding Button Logic ---
 
+    // --- URL Context Button Logic ---
+    function findUrlContextButton() {
+        return document.querySelector(URL_CONTEXT_BUTTON_SELECTOR);
+    }
+
+    function getUrlContextButtonState(button) {
+        if (!button) return false;
+        return button.getAttribute('aria-checked') === 'true';
+    }
+
+    async function setUrlContextButtonState(button, desiredState) {
+        if (!button) {
+            console.log('AI Studio Automation: URL Context button not found for state update.');
+            // showNotification('URL Context button not found.'); // Avoid too many notifications if button is persistently missing
+            return false;
+        }
+
+        const currentState = getUrlContextButtonState(button);
+        console.log(`AI Studio Automation: URL Context button current state: ${currentState}, desired: ${desiredState}`);
+
+        // Set aria-checked attribute regardless of current state to ensure it's correctly applied
+        button.setAttribute('aria-checked', desiredState.toString());
+
+        if (currentState === desiredState) {
+            console.log('AI Studio Automation: URL Context button already in desired state (aria-checked confirmed).');
+            return true;
+        }
+        
+        try {
+            console.log('AI Studio Automation: Clicking URL Context button to attempt state change.');
+            button.click();
+            
+            await new Promise(resolve => setTimeout(resolve, 250)); // Allow UI to update
+            
+            const newStateAfterClick = getUrlContextButtonState(button);
+            if (newStateAfterClick === desiredState) {
+                showNotification(`URL Context ${desiredState ? 'enabled' : 'disabled'}.`);
+                console.log(`AI Studio Automation: URL Context button state successfully changed to ${desiredState} via click.`);
+                return true;
+            } else {
+                console.warn(`AI Studio Automation: URL Context button click did not result in expected state. aria-checked is ${desiredState}, reported state after click is ${newStateAfterClick}.`);
+                showNotification(`URL Context set to ${desiredState ? 'enabled' : 'disabled'} (manual click might be needed if UI desyncs).`);
+                return true; // Still a success as aria-checked is set.
+            }
+        } catch (error) {
+            console.error('AI Studio Automation: Error clicking URL Context button:', error);
+            showNotification('Error interacting with URL Context button. State set via attribute.');
+            return false; // Click failed, but attribute was set.
+        }
+    }
+
+    async function applyUrlContextPreference() {
+        const button = findUrlContextButton();
+        if (button) {
+            console.log('AI Studio Automation: Applying URL Context preference:', urlContextPreference);
+            await setUrlContextButtonState(button, urlContextPreference);
+        } else {
+            console.log('AI Studio Automation: URL Context button not found during preference application.');
+        }
+    }
+    // --- End URL Context Button Logic ---
+
     // Combined function to apply all automations
     async function applyAllAutomation() {
         await loadSettings(); // Ensure settings are fresh
@@ -236,6 +303,7 @@ Key guidelines:
         }
         await checkAndInsertSystemPrompt();
         await applyGroundingPreference();
+        await applyUrlContextPreference();
     }
     
     // Observer to watch for DOM changes
@@ -307,6 +375,30 @@ Key guidelines:
             // However, if any path could be async, it's safer to return true.
             // For this specific case, it's synchronous, but to be safe with potential future changes:
             return true; 
+        } else if (request.action === 'updateUrlContextSetting') {
+            urlContextPreference = request.preference;
+            console.log('AI Studio Automation: Received URL Context preference update from popup:', urlContextPreference);
+            chrome.storage.sync.set({ urlContextPreference: urlContextPreference }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('AI Studio Automation: Error saving URL Context preference:', chrome.runtime.lastError);
+                }
+            });
+            applyUrlContextPreference().then(() => {
+                sendResponse({ success: true });
+            }).catch(error => {
+                console.error('AI Studio Automation: Error during updateUrlContextSetting:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+            return true; // Async response
+        } else if (request.action === 'getUrlContextStatus') {
+            const button = findUrlContextButton();
+            if (button) {
+                const status = getUrlContextButtonState(button);
+                sendResponse({ success: true, found: true, isEnabled: status });
+            } else {
+                sendResponse({ success: false, found: false });
+            }
+            return true; // Keep channel open
         }
         // If no action matches, and you're not sending a response asynchronously,
         // you might not need to return true. But if any path is async, it's good practice.

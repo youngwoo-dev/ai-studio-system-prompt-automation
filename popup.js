@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const closeModal = document.getElementById('closeModal');
     const groundingToggle = document.getElementById('groundingToggle');
     const groundingStatusText = document.getElementById('groundingStatusText');
+    const urlContextToggle = document.getElementById('urlContextToggle');
+    const urlContextStatusText = document.getElementById('urlContextStatusText');
     
     // Default system prompt
     const defaultPrompt = `You are a helpful AI assistant. Please provide accurate, helpful, and well-structured responses.
@@ -28,13 +30,15 @@ Key guidelines:
     // Load settings from storage
     async function loadSettings() {
         try {
-            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference']);
+            const result = await chrome.storage.sync.get(['enabled', 'systemPrompt', 'groundingPreference', 'urlContextPreference']);
             
             enableToggle.checked = result.enabled !== false; // Default to true
             systemPromptTextarea.value = result.systemPrompt || defaultPrompt;
             groundingToggle.checked = result.groundingPreference !== false; // Default to true
+            urlContextToggle.checked = result.urlContextPreference !== false; // Default to true
             updateCharCount();
-            await updateGroundingStatusDisplay(); // Update status after loading settings
+            await updateGroundingStatusDisplay(); 
+            await updateUrlContextStatusDisplay(); 
             
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -48,7 +52,8 @@ Key guidelines:
             const settings = {
                 enabled: enableToggle.checked,
                 systemPrompt: systemPromptTextarea.value.trim(),
-                groundingPreference: groundingToggle.checked
+                groundingPreference: groundingToggle.checked,
+                urlContextPreference: urlContextToggle.checked
             };
             
             await chrome.storage.sync.set(settings);
@@ -71,6 +76,12 @@ Key guidelines:
                         action: 'updateGroundingSetting',
                         preference: settings.groundingPreference
                     });
+
+                    // Send specific message for URL context update
+                    await chrome.tabs.sendMessage(tab.id, {
+                        action: 'updateUrlContextSetting',
+                        preference: settings.urlContextPreference
+                    });
                 }
             } catch (error) {
                 // Content script might not be loaded, that's okay
@@ -78,7 +89,8 @@ Key guidelines:
             }
             
             showStatus('Settings saved successfully!', 'success');
-            await updateGroundingStatusDisplay(); // Refresh status after saving
+            await updateGroundingStatusDisplay(); 
+            await updateUrlContextStatusDisplay(); 
             
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -114,6 +126,33 @@ Key guidelines:
         } catch (error) {
             console.error('Error updating grounding status display:', error);
             groundingStatusText.textContent = 'Error';
+        }
+    }
+
+    // Update URL Context Status Display
+    async function updateUrlContextStatusDisplay() {
+        if (!urlContextStatusText) return; 
+
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.url && tab.url.includes('aistudio.google.com')) {
+                const response = await chrome.tabs.sendMessage(tab.id, { action: 'getUrlContextStatus' });
+                if (response && response.success) {
+                    if (response.found) {
+                        urlContextStatusText.textContent = response.isEnabled ? 'Enabled on page' : 'Disabled on page';
+                    } else {
+                        urlContextStatusText.textContent = 'Button not found';
+                    }
+                } else {
+                    urlContextStatusText.textContent = 'Error getting status';
+                    console.warn('Error or no response from getUrlContextStatus:', response);
+                }
+            } else {
+                urlContextStatusText.textContent = 'N/A (not AI Studio)';
+            }
+        } catch (error) {
+            console.error('Error updating URL context status display:', error);
+            urlContextStatusText.textContent = 'Error';
         }
     }
     
@@ -194,12 +233,14 @@ Key guidelines:
                 domainIndicator.className = 'status-indicator active';
                 domainText.textContent = 'Active on AI Studio';
                 insertBtn.disabled = false;
-                await updateGroundingStatusDisplay(); // Update grounding status when on AI Studio
+                await updateGroundingStatusDisplay(); 
+                await updateUrlContextStatusDisplay(); 
             } else {
                 domainIndicator.className = 'status-indicator inactive';
                 domainText.textContent = 'Not on AI Studio';
                 insertBtn.disabled = true;
-                if (groundingStatusText) groundingStatusText.textContent = 'N/A'; // Reset grounding status text
+                if (groundingStatusText) groundingStatusText.textContent = 'N/A'; 
+                if (urlContextStatusText) urlContextStatusText.textContent = 'N/A'; 
             }
         } catch (error) {
             domainIndicator.className = 'status-indicator inactive';
@@ -226,6 +267,7 @@ Key guidelines:
     // Event listeners
     enableToggle.addEventListener('change', saveSettings);
     groundingToggle.addEventListener('change', saveSettings);
+    urlContextToggle.addEventListener('change', saveSettings);
     systemPromptTextarea.addEventListener('input', updateCharCount);
     saveBtn.addEventListener('click', saveSettings);
     insertBtn.addEventListener('click', insertPromptNow);
@@ -272,8 +314,8 @@ Key guidelines:
     });
     
     // Initialize
-    await loadSettings(); // This will call updateGroundingStatusDisplay
-    await checkDomain();    // This will also call updateGroundingStatusDisplay if on AI Studio
+    await loadSettings(); // This will call both status display updaters
+    await checkDomain();    // This will also call both status display updaters if on AI Studio
     
     // Update domain status when tab changes
     chrome.tabs.onActivated.addListener(checkDomain);
