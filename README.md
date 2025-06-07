@@ -1,6 +1,6 @@
-# AI Studio System Prompt Automation
+# AI Studio Setting Automation
 
-A Chrome extension that automatically inserts predefined system prompts into Google AI Studio's "System instructions" textarea.
+A Chrome extension to automate system prompt insertion and maintain consistent Google AI Studio settings (like Search Grounding and URL Context) across chat sessions.
 
 ## Features
 
@@ -81,10 +81,11 @@ A Chrome extension that automatically inserts predefined system prompts into Goo
 5. **Reset to default**
    - Click "Reset to Default" to restore the original system prompt
 
-6. **Control AI Studio Settings**
-   - **Google Search Grounding**: Toggle to enable/disable search grounding
-   - **URL Context**: Control URL context browsing feature
-   - **Thinking Budget**: Automatically set thinking budget to manual mode with maximum temperature (uses second temperature slider when available)
+6. **Maintain Consistent AI Studio Settings**
+   Ensure a consistent experience across your AI Studio sessions by automatically managing key settings:
+   - **Google Search Grounding**: Toggle to enable/disable search grounding. Your preference is saved and applied automatically.
+   - **URL Context**: Control the URL context browsing feature. Your preference is saved and applied automatically.
+   - **Thinking Budget**: Automatically set thinking budget to manual mode with maximum temperature (uses second temperature slider when available).
 
 ### Advanced Features
 
