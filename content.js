@@ -439,7 +439,7 @@ Key guidelines:
 
     // Retry mechanism for thinking budget
     async function retryThinkingBudgetSettings(maxRetries = 15, retryInterval = 2000) {
-        if (!isEnabled || !thinkingBudgetEnabled) {
+        if (!thinkingBudgetEnabled) {
             return;
         }
 
