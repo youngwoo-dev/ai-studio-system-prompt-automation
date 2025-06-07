@@ -222,8 +222,7 @@ Key guidelines:
     }
 
     async function applyGroundingPreference() {
-        if (!isEnabled) return; // Assuming 'isEnabled' can globally control this feature too, or add a specific toggle for grounding feature itself.
-
+        // Removed isEnabled check to decouple from auto-insert
         const button = findGroundingButton();
         if (button) {
             console.log('AI Studio Automation: Applying grounding preference. User wants:', groundingPreference);
@@ -391,7 +390,7 @@ Key guidelines:
     }
 
     async function applyThinkingBudgetSettings() {
-        if (!isEnabled || !thinkingBudgetEnabled) {
+        if (!thinkingBudgetEnabled) {
             return;
         }
 
@@ -464,17 +463,22 @@ Key guidelines:
     // --- End Thinking Budget Logic ---
 
     // Combined function to apply all automations
+    // Combined function to apply all automations
     async function applyAllAutomation() {
         await loadSettings(); // Ensure settings are fresh
-        if (!isEnabled) {
-            console.log('AI Studio Automation: Automation is disabled.');
-            return;
+
+        // Auto-insert feature (depends on isEnabled for system prompt insertion)
+        if (isEnabled) {
+            await checkAndInsertSystemPrompt();
+        } else {
+            console.log('AI Studio Automation: Auto-insert system prompt is disabled.');
         }
-        await checkAndInsertSystemPrompt();
+
+        // Independent features - apply based on their own stored preferences
         await applyGroundingPreference();
         await applyUrlContextPreference();
 
-        // Apply thinking budget settings with delay and retry
+        // Apply thinking budget settings with delay and retry (already independent internally)
         setTimeout(() => {
             retryThinkingBudgetSettings();
         }, 500);
