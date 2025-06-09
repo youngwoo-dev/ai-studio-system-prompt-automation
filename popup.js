@@ -106,7 +106,11 @@ Key guidelines:
             
         } catch (error) {
             console.error('Error saving settings:', error);
-            showStatus('Error saving settings', 'error');
+            if (error.message && (error.message.includes('QUOTA_BYTES_PER_ITEM') || error.message.includes('QUOTA_BYTES'))) {
+                showStatus('Error: Prompt too long for Chrome sync storage.', 'error');
+            } else {
+                showStatus('Error saving settings', 'error');
+            }
         }
     }
 
@@ -250,22 +254,11 @@ Key guidelines:
     
     // Update word count
     function updateWordCount() {
-        const text = systemPromptTextarea.value.trim();
-        let count = 0;
-        if (text) {
-            const words = text.match(/\S+/g); // Match non-whitespace sequences
-            count = words ? words.length : 0;
-        }
-        wordCount.textContent = count.toLocaleString();
-        
-        // Color coding for word count
-        if (count > 400) { // e.g., > 400 words is too long
-            wordCount.style.color = '#dc3545'; // Red
-        } else if (count > 200) { // e.g., > 200 words is long
-            wordCount.style.color = '#ffc107'; // Yellow
-        } else {
-            wordCount.style.color = '#666'; // Default
-        }
+        const text = systemPromptTextarea.value;
+        const words = text.match(/\b\w+\b/g) || [];
+        const count = words.length;
+        wordCount.textContent = `${count} words`;
+        wordCount.style.color = '#666'; // Default color
     }
     
     // Check current domain
