@@ -1,6 +1,6 @@
 # AI Studio Setting Automation
 
-A Chrome extension to automate system prompt insertion and maintain consistent Google AI Studio settings (like Search Grounding and URL Context) across chat sessions.
+A Chrome extension to automate system prompt insertion in Google AI Studio chat sessions.
 
 ## Features
 
@@ -12,28 +12,30 @@ A Chrome extension to automate system prompt insertion and maintain consistent G
 - **Manual insertion**: Force insert prompts with the "Insert Now" button
 - **Real-time feedback**: Visual notifications when prompts are inserted
 - **Auto-save**: Settings are automatically saved as you type
-- **Google Search Grounding**: Automatically control search grounding settings
-- **URL Context Control**: Manage URL context browsing preferences
-- **Thinking Budget Automation**: Set thinking budget to manual mode with maximum temperature (targets second temperature slider)
+- **Sound notifications**: Optional audio alert when AI Studio finishes generating responses
 
 ## Installation
 
 ### From Source (Developer Mode)
 
 1. **Download or clone this repository**
+
    ```bash
    git clone <repository-url>
    cd ai-studio-system-prompt-automation
    ```
 
 2. **Open Chrome Extensions page**
+
    - Navigate to `chrome://extensions/`
    - Or go to Chrome menu → More tools → Extensions
 
 3. **Enable Developer Mode**
+
    - Toggle the "Developer mode" switch in the top-right corner
 
 4. **Load the extension**
+
    - Click "Load unpacked"
    - Select the folder containing the extension files
    - The extension should now appear in your extensions list
@@ -50,6 +52,7 @@ A Chrome extension to automate system prompt insertion and maintain consistent G
 ### Basic Usage
 
 1. **Navigate to Google AI Studio**
+
    - Go to `https://aistudio.google.com/`
    - Open any prompt or create a new one
 
@@ -61,53 +64,49 @@ A Chrome extension to automate system prompt insertion and maintain consistent G
 ### Managing System Prompts
 
 1. **Open the extension popup**
+
    - Click the extension icon in the Chrome toolbar
    - The popup will show your current settings
 
 2. **Edit your system prompt**
+
    - Modify the text in the large textarea
    - Changes are automatically saved as you type
    - Character count is displayed for reference
 
 3. **Toggle auto-insertion**
+
    - Use the toggle switch to enable/disable automatic insertion
    - When disabled, prompts won't be inserted automatically
 
-4. **Manual insertion**
+4. **Enable sound notifications**
+
+   - Toggle "Sound Notification on Completion" to get audio alerts
+   - Plays a brief tone when AI Studio finishes generating a response
+   - Helpful when working in other tabs or windows
+
+5. **Manual insertion**
+
    - Click "Insert Now" to manually insert the prompt
    - This works even when auto-insertion is disabled
    - Only works when you're on an AI Studio page
 
-5. **Reset to default**
+6. **Reset to default**
    - Click "Reset to Default" to restore the original system prompt
-
-6. **Maintain Consistent AI Studio Settings**
-   Ensure a consistent experience across your AI Studio sessions by automatically managing key settings:
-   - **Google Search Grounding**: Toggle to enable/disable search grounding. Your preference is saved and applied automatically.
-   - **URL Context**: Control the URL context browsing feature. Your preference is saved and applied automatically.
-   - **Thinking Budget**: Automatically set thinking budget to manual mode with maximum temperature (uses second temperature slider when available).
 
 ### Advanced Features
 
 - **Domain indicator**: The popup shows whether you're currently on AI Studio
-- **Status indicators**: Real-time status for each automation feature
 - **Help documentation**: Click "Help" in the popup for detailed instructions
 - **Keyboard shortcuts**: Use Ctrl/Cmd+S to quickly save settings
 - **Error handling**: Clear error messages if something goes wrong
-- **Retry mechanisms**: Automatic retry for features that may load dynamically
 
 ## Default System Prompt
 
 The extension comes with a default system prompt:
 
 ```
-You are a helpful AI assistant. Please provide accurate, helpful, and well-structured responses.
-
-Key guidelines:
-- Be clear and concise in your explanations
-- Provide examples when helpful
-- Ask clarifying questions if the request is ambiguous
-- Maintain a professional and friendly tone
+KaTeX를 사용해 수식과 기호를 서식화하세요. 모든 수학 표현은 달러 기호($)로 감싸야 합니다(예: $E=mc^2$). Gemini 환경에서 수식이 렌더링되도록 필요한 KaTeX 라이브러리를 포함-설정했는지 확인하세요.
 ```
 
 You can customize this to match your specific needs.
@@ -155,12 +154,6 @@ You can customize this to match your specific needs.
 2. **Sync issues**: Try disabling and re-enabling Chrome sync
 3. **Extension reload**: Try disabling and re-enabling the extension
 
-### Feature-specific issues
-
-1. **Thinking budget not working**: Feature may take up to 30 seconds to detect the button
-2. **Grounding/URL context not applying**: Refresh the page and wait for full load
-3. **Status showing "Button not found"**: The feature may not be available on the current page type
-
 ## Development
 
 ### File Structure
@@ -201,6 +194,7 @@ This project is open source. Feel free to modify and distribute according to you
 ## Support
 
 For issues, feature requests, or questions:
+
 1. Check the troubleshooting section above
 2. Review browser console for error messages
 3. Ensure you're using a supported browser version

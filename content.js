@@ -5,6 +5,7 @@
   let isEnabled = true;
   let systemPrompt = '';
   let soundNotification = false;
+  let soundVolume = 40;
   let hasInserted = false;
   let isGenerating = false;
 
@@ -15,15 +16,18 @@
         'enabled',
         'systemPrompt',
         'soundNotification',
+        'soundVolume',
       ]);
       isEnabled = result.enabled !== false; // Default to true
       systemPrompt = result.systemPrompt || getDefaultPrompt();
       soundNotification = result.soundNotification === true; // Default to false
+      soundVolume = result.soundVolume || 40;
     } catch (error) {
       console.error('Error loading settings:', error);
       isEnabled = true;
       systemPrompt = getDefaultPrompt();
       soundNotification = false;
+      soundVolume = 40;
     }
   }
 
@@ -183,13 +187,14 @@
       oscillator.type = 'sine';
 
       // Fade in and out for smooth sound
+      const volume = soundVolume / 100; // Convert percentage to 0-1 range
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(
-        0.15,
+        volume,
         audioContext.currentTime + 0.05
       );
       gainNode.gain.linearRampToValueAtTime(
-        0.15,
+        volume,
         audioContext.currentTime + 0.15
       );
       gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
@@ -217,7 +222,7 @@
       const audio = new Audio(
         'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBCuBzvLZjjoIGGG47OScTgwOUq7n77VgGgU7k9n1y3coBCV1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV+16+ytVBELSKLh8r5uIAUugdbyz3cqByN0yO3ciEAKF165+u+rUhEJSKPj8LpvHAU0ktXwy3cqBSl1yO7ciEEJFV61'
       );
-      audio.volume = 0.5;
+      audio.volume = soundVolume / 100;
       audio
         .play()
         .then(() => {
@@ -322,6 +327,7 @@
         request.soundNotification !== undefined
           ? request.soundNotification
           : soundNotification;
+      soundVolume = request.soundVolume !== undefined ? request.soundVolume : soundVolume;
       hasInserted = false; // Reset insertion flag when settings change
       sendResponse({ success: true });
     } else if (request.action === 'insertNow') {

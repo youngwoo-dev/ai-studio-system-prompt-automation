@@ -1,153 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Studio Setting Automation</title>
-    <link rel="stylesheet" href="popup.css">
-</head>
-<body>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <h1>AI Studio Automation</h1>
-            <p class="subtitle">Set Consistent Setting between Chat Sessions</p>
-        </header>
-        
-        <main>
-            <!-- Google Search Grounding Toggle -->
-            <div class="setting-group">
-                <div class="toggle-container">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="groundingToggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">Google Search Grounding</span>
-                    </label>
-                </div>
-                <div class="setting-status">
-                    Status: <span id="groundingStatusText">Unknown</span>
-                </div>
-            </div>
+      <header>
+        <h1>AI Studio Automation</h1>
+        <p class="subtitle">Set Consistent Setting between Chat Sessions</p>
+      </header>
 
-            <!-- URL Context Toggle -->
-            <div class="setting-group">
-                <div class="toggle-container">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="urlContextToggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">URL Context</span>
-                    </label>
-                </div>
-                <div class="setting-status">
-                    Status: <span id="urlContextStatusText">Unknown</span>
-                </div>
-            </div>
+      <main>
+        <!-- Enable/Disable Toggle -->
+        <div class="setting-group">
+          <div class="toggle-container">
+            <label class="toggle-label">
+              <input type="checkbox" id="enableToggle" checked />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Auto-insert System Prompt</span>
+            </label>
+          </div>
+        </div>
 
-            <!-- Thinking Budget Toggle -->
-            <div class="setting-group">
-                <div class="toggle-container">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="thinkingBudgetToggle">
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">Set Thinking Budget to Max</span>
-                    </label>
-                </div>
-                <div class="setting-status">
-                    Status: <span id="thinkingBudgetStatusText">Unknown</span>
-                </div>
-                <div class="setting-description">
-                    Automatically sets thinking budget to manual mode with maximum value
-                </div>
+        <!-- Sound Notification Toggle -->
+        <div class="setting-group">
+          <div class="toggle-container">
+            <label class="toggle-label">
+              <input type="checkbox" id="soundNotificationToggle" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Sound Notification on Completion</span>
+            </label>
+          </div>
+          <div class="setting-description">
+            Plays a sound when AI Studio finishes generating a response
+          </div>
+          <!-- Volume Slider -->
+          <div class="volume-control" id="volumeControl" style="display: none;">
+            <label for="volumeSlider" class="volume-label">Volume:</label>
+            <div class="volume-slider-container">
+              <input type="range" id="volumeSlider" min="0" max="100" value="40" class="volume-slider" />
+              <span id="volumeValue" class="volume-value">40%</span>
             </div>
+          </div>
+        </div>
 
+        <!-- System Prompt Editor -->
+        <div class="setting-group">
+          <label for="systemPrompt" class="label">System Prompt:</label>
+          <textarea
+            id="systemPrompt"
+            placeholder="Enter your system prompt here..."
+            rows="8"
+          ></textarea>
+          <div class="word-counter">
+            <span id="wordCount">0</span>
+          </div>
+        </div>
 
-            <!-- Enable/Disable Toggle -->
-            <div class="setting-group">
-                <div class="toggle-container">
-                    <label class="toggle-label">
-                        <input type="checkbox" id="enableToggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-text">Auto-insert System Prompt</span>
-                    </label>
-                </div>
-            </div>
+        <!-- Action Buttons -->
+        <div class="button-group">
+          <button id="saveBtn" class="btn btn-primary">Save Settings</button>
+          <button id="insertBtn" class="btn btn-secondary">Insert Now</button>
+          <button id="resetBtn" class="btn btn-tertiary">
+            Reset to Default
+          </button>
+        </div>
 
-            <!-- System Prompt Editor -->
-            <div class="setting-group">
-                <label for="systemPrompt" class="label">System Prompt:</label>
-                <textarea 
-                    id="systemPrompt" 
-                    placeholder="Enter your system prompt here..."
-                    rows="8"
-                ></textarea>
-                <div class="word-counter">
-                    <span id="wordCount">0</span>
-                </div>
-            </div>
-            
-            <!-- Action Buttons -->
-            <div class="button-group">
-                <button id="saveBtn" class="btn btn-primary">Save Settings</button>
-                <button id="insertBtn" class="btn btn-secondary">Insert Now</button>
-                <button id="resetBtn" class="btn btn-tertiary">Reset to Default</button>
-            </div>
-            
-            <!-- Status Messages -->
-            <div id="statusMessage" class="status-message hidden"></div>
-            
-            <!-- Current Domain Info -->
-            <div class="info-section">
-                <div class="domain-status">
-                    <span class="status-indicator" id="domainIndicator"></span>
-                    <span id="domainText">Checking domain...</span>
-                </div>
-            </div>
-        </main>
-        
-        <footer>
-            <div class="footer-links">
-                <a href="#" id="helpLink">Help</a>
-                <span class="separator">|</span>
-                <span class="version">v1.1.0</span>
-            </div>
-        </footer>
+        <!-- Status Messages -->
+        <div id="statusMessage" class="status-message hidden"></div>
+
+        <!-- Current Domain Info -->
+        <div class="info-section">
+          <div class="domain-status">
+            <span class="status-indicator" id="domainIndicator"></span>
+            <span id="domainText">Checking domain...</span>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <div class="footer-links">
+          <a href="#" id="helpLink">Help</a>
+          <span class="separator">|</span>
+          <span class="version">v1.1.0</span>
+        </div>
+      </footer>
     </div>
-    
+
     <!-- Help Modal -->
     <div id="helpModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>How to Use</h3>
-                <button id="closeModal" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <ol>
-                    <li>Navigate to <strong>aistudio.google.com</strong></li>
-                    <li>Open a prompt or create a new one</li>
-                    <li>The extension will automatically detect the "System instructions" textarea</li>
-                    <li>If the textarea is empty, your system prompt will be inserted automatically</li>
-                    <li>Use the toggles to enable/disable various automation features</li>
-                    <li>Click "Insert Now" to manually insert the prompt</li>
-                </ol>
-
-                <h4>Features:</h4>
-                <ul>
-                    <li><strong>System Prompt:</strong> Auto-insert custom system instructions</li>
-                    <li><strong>Google Search Grounding:</strong> Control search grounding setting</li>
-                    <li><strong>URL Context:</strong> Control URL context browsing setting</li>
-                    <li><strong>Thinking Budget:</strong> Set thinking budget to manual mode with max temperature</li>
-                </ul>
-
-                <h4>Tips:</h4>
-                <ul>
-                    <li>The extension only works on aistudio.google.com</li>
-                    <li>Prompts are only inserted into empty textareas</li>
-                    <li>Your settings are automatically saved</li>
-                    <li>Status indicators show current page state for each feature</li>
-                </ul>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>How to Use</h3>
+          <button id="closeModal" class="close-btn">&times;</button>
         </div>
+        <div class="modal-body">
+          <ol>
+            <li>Navigate to <strong>aistudio.google.com</strong></li>
+            <li>Open a prompt or create a new one</li>
+            <li>
+              The extension will automatically detect the "System instructions"
+              textarea
+            </li>
+            <li>
+              If the textarea is empty, your system prompt will be inserted
+              automatically
+            </li>
+            <li>Use the toggle to enable/disable automatic insertion</li>
+            <li>Click "Insert Now" to manually insert the prompt</li>
+          </ol>
+
+          <h4>Features:</h4>
+          <ul>
+            <li>
+              <strong>System Prompt:</strong> Auto-insert custom system
+              instructions
+            </li>
+            <li>
+              <strong>Sound Notification:</strong> Play a sound when AI Studio
+              finishes generating a response
+            </li>
+          </ul>
+
+          <h4>Tips:</h4>
+          <ul>
+            <li>The extension only works on aistudio.google.com</li>
+            <li>Prompts are only inserted into empty textareas</li>
+            <li>Your settings are automatically saved</li>
+            <li>Sound notifications help you know when responses are ready</li>
+          </ul>
+        </div>
+      </div>
     </div>
-    
+
     <script src="popup.js"></script>
-</body>
+  </body>
 </html>
